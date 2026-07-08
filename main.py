@@ -39,12 +39,23 @@ def main():
     print("正在执行 跨年份全自动对齐与高阶特征量化清洗...")
     print("==================================================")
 
+    print("开始加载历史开奖数据...")
+
     if not os.path.exists(data_dir):
         print(f"❌ 错误：找不到 【{data_dir}】 文件夹，请检查路径。")
         return
 
+    if not os.path.isdir(data_dir):
+        print(f"❌ 错误：{data_dir} 不是一个目录")
+        return
+
     # 获取所有年份的 json 文件
-    json_files = sorted([f for f in os.listdir(data_dir) if f.endswith(".json")])
+
+    try:
+        json_files = sorted([f for f in os.listdir(data_dir) if f.endswith(".json")])
+    except OSError as e:
+        print(f"❌ 错误：读取数据目录失败：{e}")
+        return
 
     if not json_files:
         print(f"❌ 错误：【{data_dir}】 文件夹内没有找到任何年份的 JSON 文件。")
@@ -83,6 +94,8 @@ def main():
         print("❌ 未成功加载任何年份的历史数据。")
         return
 
+    print(f"成功加载 {len(all_merged_records)} 条历史记录。")
+
     # 3. 使用最新一年做引擎驱动大盘
     latest_file_year = int(json_files[-1].split(".")[0])
     final_base_zodiac = get_base_zodiac_by_year(latest_file_year)
@@ -90,7 +103,11 @@ def main():
         f"\n🚀 统一采用最新 【{latest_file_year} ({final_base_zodiac}年)】 逻辑引擎进行全盘规律推演..."
     )
 
-    analyzer = ZodiacPatternAnalyzer(base_zodiac=final_base_zodiac)
+    try:
+        analyzer = ZodiacPatternAnalyzer(base_zodiac=final_base_zodiac)
+    except Exception as e:
+        print(f"❌ 分析失败：{e}")
+        return
 
     # 喂入合并后的大池子
     report = analyzer.compute_patterns(all_merged_records)
