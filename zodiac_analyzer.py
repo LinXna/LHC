@@ -1,7 +1,10 @@
 import os
 import json
+import logging
 import collections
 from itertools import combinations
+
+logger = logging.getLogger(__name__)
 
 
 class ZodiacPatternAnalyzer:
@@ -32,6 +35,14 @@ class ZodiacPatternAnalyzer:
 
         all_records = []
 
+        if not os.path.exists(data_dir):
+            logger.error(f"数据目录不存在: {data_dir}")
+            return []
+
+        if not os.path.isdir(data_dir):
+            logger.error(f"{data_dir} 不是一个目录")
+            return []
+
         # 如果指定文件，只读取指定文件
         if file_path:
             target_files = [file_path]
@@ -53,38 +64,71 @@ class ZodiacPatternAnalyzer:
 
                     payload = json.load(f)
 
+                    if not isinstance(payload, dict):
+                        logger.warning(f"{path} 不是合法JSON对象")
+                        continue
+
                     body_list = (
                         payload.get("result", {}).get("data", {}).get("bodyList", [])
                     )
 
+                    if not isinstance(body_list, list):
+                        logger.warning(f"{path} 中 bodyList 格式错误")
+                        continue
+
                     for item in body_list:
+                        try:
+                            code_str = item.get("preDrawCode")
+                            if not code_str:
+                                continue
+                            try:
+                                nums = [
+                                    int(x.strip())
+                                    for x in code_str.split(",")
+                                    if x.strip()
+                                ]
+                            except ValueError:
+                                logger.warning(f"号码格式错误：{code_str}")
+                                continue
+                            if len(nums) == 7:
+                                all_records.append(
+                                    {
+                                        "issue": item.get("issue"),
+                                        "date": item.get("preDrawDate"),
+                                        "numbers": nums,
+                                    }
+                                )
 
-                        code_str = item.get("preDrawCode")
-
-                        if not code_str:
+                        except (KeyError, ValueError, TypeError) as e:
+                            logger.warning(f"跳过异常记录：{e}")
                             continue
 
-                        nums = [
-                            int(x.strip()) for x in code_str.split(",") if x.strip()
-                        ]
+            except FileNotFoundError:
+                logger.warning(f"文件不存在，已跳过：{path}")
+                continue
 
-                        if len(nums) == 7:
+            except PermissionError:
+                logger.warning(f"没有权限读取文件：{path}")
+                continue
 
-                            all_records.append(
-                                {
-                                    "issue": item.get("issue"),
-                                    "date": item.get("preDrawDate"),
-                                    "numbers": nums,
-                                }
-                            )
+            except UnicodeDecodeError:
+                logger.warning(f"文件编码错误：{path    }")
+                continue
 
-            except Exception as e:
-                print(f"【警告】读取文件 {path} 错误: {e}")
+            except json.JSONDecodeError as e:
+                logger.warning(f"JSON格式错误：{path} ({e})")
+                continue
+
+            except OSError as e:
+                logger.warning(f"读取文件失败：{path} ({e})")
+                continue
 
             # 统一按照期号排序
             all_records.sort(
                 key=lambda x: int(x["issue"]) if x["issue"] is not None else 0
             )
+
+        logger.info(f"成功加载 {len(all_records)} 条历史记录")
 
         return all_records
 
