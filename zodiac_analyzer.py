@@ -182,14 +182,98 @@ class ZodiacPatternAnalyzer:
 
     # 🌟 名字锁死为 compute_patterns，彻底解决报错！
     def compute_patterns(self, sorted_records):
-        if not sorted_records:
-            return {}
+        if sorted_records is None:
+            raise ValueError("sorted_records 不能为 None")
+        if not isinstance(sorted_records, list):
+            raise TypeError("sorted_records 必须是 list")
+        if len(sorted_records) == 0:
+            return {
+                "total": 0,
+                "rule1": {},
+                "rule2": {},
+                "rule3": {},
+                "rule4": {},
+                "rule5": {},
+                "rule6": {},
+                "rule7": {},
+                "score": {},
+            }
+
         total_periods = len(sorted_records)
-        history_data = [r["numbers"] for r in sorted_records]
+
+        MIN_PERIODS = 4
+
+        if total_periods < MIN_PERIODS:
+            return {
+                "total": total_periods,
+                "warning": "历史数据不足，无法执行统计分析。",
+                "rule1": {},
+                "rule2": {},
+                "rule3": {},
+                "rule4": {},
+                "rule5": {},
+                "rule6": {},
+                "rule7": {},
+                "score": {},
+            }
+
+        history_data = []
+
+        for record in sorted_records:
+            if not isinstance(record, dict):
+                continue
+            nums = record.get("numbers")
+            if not isinstance(nums, list):
+                continue
+            if len(nums) != 7:
+                continue
+            history_data.append(nums)
+
+        # 重新统计有效数据数量
+        total_periods = len(history_data)
+
+        if total_periods < MIN_PERIODS:
+            return {
+                "total": total_periods,
+                "warning": "有效历史数据不足，无法执行统计分析。",
+                "rule1": {},
+                "rule2": {},
+                "rule3": {},
+                "rule4": {},
+                "rule5": {},
+                "rule6": {},
+                "rule7": {},
+                "score": {},
+            }
 
         # 基础生肖矩阵转化
-        zodiac_matrix = [[self.zodiac_map[n] for n in group] for group in history_data]
-        total_valid_p = total_periods - 1
+        zodiac_matrix = []
+
+        for group in history_data:
+            try:
+                zodiac_matrix.append([self.zodiac_map[n] for n in group])
+            except (KeyError, TypeError) as e:
+                logger.warning(f"生肖映射失败，已跳过一条记录：{e}")
+                continue
+
+        # 再次确认生肖矩阵数据足够
+        total_periods = len(zodiac_matrix)
+
+        if total_periods < MIN_PERIODS:
+            return {
+                "total": total_periods,
+                "warning": "有效生肖数据不足，无法执行统计分析。",
+                "rule1": {},
+                "rule2": {},
+                "rule3": {},
+                "rule4": {},
+                "rule5": {},
+                "rule6": {},
+                "rule7": {},
+                "score": {},
+            }
+
+        total_valid_p = max(total_periods - 1, 1)
 
         # =========================================================================
         # 查找器7：前三期轨迹回补规则
@@ -230,7 +314,7 @@ class ZodiacPatternAnalyzer:
 
             for name, cnt in counts.items():
 
-                rate = cnt / total
+                rate = cnt / total if total else 0
 
                 if rate >= 0.10:
 
