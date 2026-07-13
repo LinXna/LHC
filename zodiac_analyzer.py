@@ -1,8 +1,45 @@
 import os
 import json
+import logging
 import collections
 from itertools import combinations
 
+logger = logging.getLogger(__name__)
+
+# =========================
+# 分析器全局常量
+# =========================
+
+# 一期开奖号码数量（6个正码 + 1个特别号）
+DRAW_SIZE = 7
+
+# 十二生肖数量
+ZODIAC_COUNT = 12
+
+# 合法号码范围
+MIN_NUMBER = 1
+MAX_NUMBER = 49
+
+# 查找器7最少需要历史期数
+MIN_HISTORY_PERIODS = 4
+
+# 热门阈值（10%）
+HOT_RATE_THRESHOLD = 0.10
+
+# 默认返回结构
+EMPTY_RULE_RESULT = {}
+
+EMPTY_RESULT = {
+    "total": 0,
+    "rule1": {},
+    "rule2": {},
+    "rule3": {},
+    "rule4": {},
+    "rule5": {},
+    "rule6": {},
+    "rule7": {},
+    "score": {},
+}
 
 class ZodiacPatternAnalyzer:
     def __init__(self, base_zodiac="马"):
@@ -26,7 +63,7 @@ class ZodiacPatternAnalyzer:
     def _build_map(self, base_zodiac):
         idx = self.zodiac_order.index(base_zodiac)
         aligned = self.zodiac_order[idx:] + self.zodiac_order[:idx]
-        return {i: aligned[(i - 1) % 12] for i in range(1, 50)}
+        return {i: aligned[(i - 1) % 12] for i in range(MIN_NUMBER, MAX_NUMBER + 1)}
 
     def load_json_data(self, file_path=None, data_dir="data"):
 
@@ -140,12 +177,119 @@ class ZodiacPatternAnalyzer:
     def compute_patterns(self, sorted_records):
         if not sorted_records:
             return {}
+
         total_periods = len(sorted_records)
-        history_data = [r["numbers"] for r in sorted_records]
+
+        if total_periods < MIN_HISTORY_PERIODS:
+            return {
+                "total": total_periods,
+                "warning": "历史数据不足，无法执行统计分析。",
+                "rule1": {},
+                "rule2": {},
+                "rule3": {},
+                "rule4": {},
+                "rule5": {},
+                "rule6": {},
+                "rule7": {},
+                "rule1_pairs": {},
+                "rule1_triplets": {},
+                "rule2_kills": [],
+                "rule3_report": {},
+                "top_special_expanded": [],
+                "top_15_pairs": [],
+                "bottom_15_pairs": [],
+                "combo_linkage": [],
+                "reverse_trace": [],
+                "trace_recovery": {},
+                "zodiac_score": {},
+                "zodiac_ranking": [],
+                "timeline": {},
+                "score": {},
+            }
+
+        history_data = []
+
+        for record in sorted_records:
+            if not isinstance(record, dict):
+                continue
+            nums = record.get("numbers")
+            if not isinstance(nums, list):
+                continue
+            if len(nums) != DRAW_SIZE:
+                continue
+            history_data.append(nums)
+
+        # 重新统计有效数据数量
+        total_periods = len(history_data)
+
+        if total_periods < MIN_HISTORY_PERIODS:
+            return {
+                "total": total_periods,
+                "warning": "有效历史数据不足，无法执行统计分析。",
+                "rule1": {},
+                "rule2": {},
+                "rule3": {},
+                "rule4": {},
+                "rule5": {},
+                "rule6": {},
+                "rule7": {},
+                "rule1_pairs": {},
+                "rule1_triplets": {},
+                "rule2_kills": [],
+                "rule3_report": {},
+                "top_special_expanded": [],
+                "top_15_pairs": [],
+                "bottom_15_pairs": [],
+                "combo_linkage": [],
+                "reverse_trace": [],
+                "trace_recovery": {},
+                "zodiac_score": {},
+                "zodiac_ranking": [],
+                "timeline": {},
+                "score": {},
+            }
 
         # 基础生肖矩阵转化
-        zodiac_matrix = [[self.zodiac_map[n] for n in group] for group in history_data]
-        total_valid_p = total_periods - 1
+        zodiac_matrix = []
+
+        for group in history_data:
+            try:
+                zodiac_matrix.append([self.zodiac_map[n] for n in group])
+            except (KeyError, TypeError) as e:
+                logger.warning(f"生肖映射失败，已跳过一条记录：{e}")
+                continue
+
+        # 再次确认生肖矩阵数据足够
+        total_periods = len(zodiac_matrix)
+
+        if total_periods < MIN_HISTORY_PERIODS:
+            return {
+                "total": total_periods,
+                "warning": "有效生肖数据不足，无法执行统计分析。",
+                "rule1": {},
+                "rule2": {},
+                "rule3": {},
+                "rule4": {},
+                "rule5": {},
+                "rule6": {},
+                "rule7": {},
+                "rule1_pairs": {},
+                "rule1_triplets": {},
+                "rule2_kills": [],
+                "rule3_report": {},
+                "top_special_expanded": [],
+                "top_15_pairs": [],
+                "bottom_15_pairs": [],
+                "combo_linkage": [],
+                "reverse_trace": [],
+                "trace_recovery": {},
+                "zodiac_score": {},
+                "zodiac_ranking": [],
+                "timeline": {},
+                "score": {},
+            }
+
+        total_valid_p = max(total_periods - 1, 1)
 
         # =========================================================================
         # 查找器7：前三期轨迹回补规则
@@ -153,7 +297,7 @@ class ZodiacPatternAnalyzer:
 
         trace_recovery = collections.defaultdict(list)
 
-        for i in range(3, total_periods - 1):
+        for i in range(MIN_HISTORY_PERIODS - 1, total_periods - 1):
 
             last1 = set(zodiac_matrix[i - 1])
             last2 = set(zodiac_matrix[i - 2])
@@ -188,7 +332,7 @@ class ZodiacPatternAnalyzer:
 
                 rate = cnt / total
 
-                if rate >= 0.10:
+                if rate >= HOT_RATE_THRESHOLD:
 
                     hot.append((name, cnt, rate))
 
@@ -325,8 +469,6 @@ class ZodiacPatternAnalyzer:
             rule1_triplet_detail, size=3, hot_threshold=0.12, cold_zero=True
         )
 
-        print(list(rule1_triplet_report.keys())[:10])
-
         # 📊 注入升级后的1~4细分字典
         diversity_repeat_rule = {
             div: {
@@ -462,8 +604,7 @@ class ZodiacPatternAnalyzer:
 
         # 优化：提前转换为集合，加速查找速度
         history_sets = [set(nums) for nums in history_data]
-        if True:
-            for target_idx in range(total_periods):
+        for target_idx in range(total_periods):
                 # 📢 增加进度打印：每处理 10% 的数据就给你汇报一次，让你知道程序活得好好的
                 if target_idx % max(1, total_periods // 10) == 0:
                     percent = (target_idx / total_periods) * 100

@@ -44,7 +44,10 @@ def main():
         return
 
     # 获取所有年份的 json 文件
-    json_files = sorted([f for f in os.listdir(data_dir) if f.endswith(".json")])
+    json_files = sorted(
+        [f for f in os.listdir(data_dir) if f.endswith(".json")],
+        key=lambda x: int(os.path.splitext(x)[0]),
+    )
 
     if not json_files:
         print(f"❌ 错误：【{data_dir}】 文件夹内没有找到任何年份的 JSON 文件。")
@@ -53,7 +56,7 @@ def main():
     # 🚀 完全沿用你原装类的读取逻辑，只是分年份进行
     for file_name in json_files:
         try:
-            year_str = file_name.split(".")[0]
+            year_str = os.path.splitext(file_name)[0]
             year_int = int(year_str)
 
             dynamic_base = get_base_zodiac_by_year(year_int)
@@ -166,27 +169,27 @@ def main():
     if pair_printed_count == 0:
         output.append("    * 当前暂无满足高频爆发或绝对硬杀的高阶生肖对联合特征形态。")
 
-        output.append("\n【查找器 7：前三期生肖轨迹断层回补矩阵】")
+    output.append("\n【查找器 7：前三期生肖轨迹断层回补矩阵】")
 
-        trace = report.get("trace_recovery", {})
+    trace = report.get("trace_recovery", {})
 
-        for name, data in trace.items():
+    for name, data in trace.items():
 
-            if not data:
-                continue
+        if not data:
+            continue
 
-            output.append(f"  >>> {name}")
+        output.append(f"  >>> {name}")
 
-            sorted_data = sorted(data.items(), key=lambda x: x[1]["rate"], reverse=True)
+        sorted_data = sorted(data.items(), key=lambda x: x[1]["rate"], reverse=True)
 
-            for z, stat in sorted_data[:5]:
+        for z, stat in sorted_data[:5]:
 
-                output.append(
-                    f"    * 【{z}】: "
-                    f"触发 {stat['trigger']} 次 | "
-                    f"下一期回补 {stat['recover']} 次 | "
-                    f"概率 {stat['rate']:.1%}"
-                )
+            output.append(
+                f"    * 【{z}】: "
+                f"触发 {stat['trigger']} 次 | "
+                f"下一期回补 {stat['recover']} 次 | "
+                f"概率 {stat['rate']:.1%}"
+            )
 
     output.append("\n【查找器 2：微观高置信度跨期强力杀号过滤器】")
 
@@ -289,6 +292,27 @@ def main():
                 "    * 📊 [1079期实际偏态] : 历史大底中该单点环境未形成显著记录。"
             )
     output.append("  --------------------------------------------------")
+
+    if len(records) >= 3:
+        last1 = set([analyzer.zodiac_map[n] for n in records[-2]["numbers"]])
+        last2 = set([analyzer.zodiac_map[n] for n in records[-3]["numbers"]])
+
+        curr = set(last_zodiacs)
+        disappear = (last1 & last2) - curr
+        if disappear:
+            for z in disappear:
+                if z in report["trace_recovery"]:
+                    item = report["trace_recovery"][z]
+                    hot = ", ".join(f"【{a}】({b:.1%})" for a, _, b in item["hot"][:3])
+                    output.append(
+                        f"    * 【{z}】连续两期出现，本期消失 -> 下期历史高频：{hot}"
+                    )
+        else:
+            output.append("    * 当前未发现连续两期消失的生肖。")
+    elif len(records) == 2:
+        output.append("    * 数据量仅有两期，无法进行连续两期消失回补审计。")
+    else:
+        output.append("    * 数据量不足，无法进行连续两期消失回补审计。")
 
     difficulty_score = 50
     eval_reasons = []
