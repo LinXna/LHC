@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 from itertools import combinations
 from zodiac_analyzer import ZodiacPatternAnalyzer
@@ -50,7 +51,6 @@ def main():
         return
 
     # 获取所有年份的 json 文件
-
     try:
         json_files = sorted([f for f in os.listdir(data_dir) if f.endswith(".json")])
     except OSError as e:
@@ -61,30 +61,45 @@ def main():
         print(f"❌ 错误：【{data_dir}】 文件夹内没有找到任何年份的 JSON 文件。")
         return
 
-    # 🚀 完全沿用你原装类的读取逻辑，只是分年份进行
+    # 🚀 按年份加载数据
     for file_name in json_files:
         try:
-            year_str = file_name.split(".")[0]
-            year_int = int(year_str)
+            year_int = None
+            file_path = os.path.join(data_dir, file_name)
+
+            # 优先从文件内容提取年份（从第一条记录的 preDrawDate）
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    payload = json.load(f)
+                    body_list = (
+                        payload.get("result", {}).get("data", {}).get("bodyList", [])
+                    )
+                    if isinstance(body_list, list) and len(body_list) > 0:
+                        first_date = body_list[0].get("preDrawDate")
+                        if first_date and len(first_date) >= 4:
+                            year_int = int(first_date[:4])
+            except Exception:
+                pass  # 回退到文件名解析
+
+            # 内容提取失败则从文件名提取
+            if year_int is None:
+                year_str = file_name.split(".")[0]
+                year_int = int(year_str)
 
             dynamic_base = get_base_zodiac_by_year(year_int)
 
-            # 1. 实例化当年的分析器
+            # 实例化当年的分析器
             temp_analyzer = ZodiacPatternAnalyzer(base_zodiac=dynamic_base)
-            year_records = temp_analyzer.load_json_data(
-                file_path=os.path.join(data_dir, file_name)
-            )
+            year_records = temp_analyzer.load_json_data(file_path=file_path)
 
-            valid_count = 0
             if year_records:
                 for record in year_records:
                     if isinstance(record, dict):
                         record["archive_year"] = year_int
                         all_merged_records.append(record)
-                        valid_count += 1
 
             print(
-                f"📂 发现数据源: {file_name} | 本命年: 【{dynamic_base}】 -> 原装逻辑加载成功"
+                f"📂 发现数据源: {file_name} | 本命年: 【{dynamic_base}】 -> 加载成功"
             )
 
         except Exception as e:
@@ -94,10 +109,23 @@ def main():
         print("❌ 未成功加载任何年份的历史数据。")
         return
 
+    # 🔧 全局排序，保证期号顺序
+    all_merged_records.sort(key=lambda x: x.get("issue", 0))
+
     print(f"成功加载 {len(all_merged_records)} 条历史记录。")
 
-    # 3. 使用最新一年做引擎驱动大盘
-    latest_file_year = int(json_files[-1].split(".")[0])
+    # 确定最新年份
+    latest_file_year = None
+    try:
+        latest_file_year = int(json_files[-1].split(".")[0])
+    except (ValueError, IndexError):
+        # 回退方案：如果文件名解析失败，尝试从最后一条记录获取
+        if all_merged_records:
+            latest_file_year = all_merged_records[-1].get("archive_year")
+        if latest_file_year is None:
+            print("❌ 无法确定最新年份，请检查数据文件。")
+            return
+
     final_base_zodiac = get_base_zodiac_by_year(latest_file_year)
     print(
         f"\n🚀 统一采用最新 【{latest_file_year} ({final_base_zodiac}年)】 逻辑引擎进行全盘规律推演..."
@@ -114,7 +142,7 @@ def main():
     total_valid_p = report["total"] - 1
 
     # ========================================================================
-    # 报告渲染输出逻辑（融入硬核严谨审计项）
+    # 报告渲染输出逻辑
     # ========================================================================
     output = []
     output.append("==================================================")
@@ -129,7 +157,7 @@ def main():
         "【查找器 1：当前期生肖数量与具体生肖交叉精细联动规律（双向红蓝截击）】"
     )
 
-    # 📈 严谨审计项 1：细化重复生肖数量统计 (1~4个生肖的精确拆解)
+    # 📈 全局大底特征
     output.append(
         "  ① 全局大底特征：去重后生肖多样性数量下的临期生肖连庄/重复出现规律："
     )
@@ -137,7 +165,6 @@ def main():
         output.append(
             f"    * 历史当期共开出 【{div}】 种不同生肖时 (跨年共现 {stat['total_occur']} 期) -> 下期[临期生肖重复出现]的总概率为: {stat['repeat_rate']:.1%}"
         )
-        # 获取由升级后的 zodiac_analyzer 统计出的精确重复个数字典
         rep_counts = stat.get("repeat_counts", {})
         total_occur = stat["total_occur"] if stat["total_occur"] > 0 else 1
         for k in range(1, 8):
@@ -184,20 +211,13 @@ def main():
         output.append("    * 当前暂无满足高频爆发或绝对硬杀的高阶生肖对联合特征形态。")
 
     output.append("\n【查找器 7：前三期生肖轨迹断层回补矩阵】")
-
     trace = report.get("trace_recovery", {})
-
     for name, data in trace.items():
-
         if not data:
             continue
-
         output.append(f"  >>> {name}")
-
         sorted_data = sorted(data.items(), key=lambda x: x[1]["rate"], reverse=True)
-
         for z, stat in sorted_data[:5]:
-
             output.append(
                 f"    * 【{z}】: "
                 f"触发 {stat['trigger']} 次 | "
@@ -206,7 +226,6 @@ def main():
             )
 
     output.append("\n【查找器 2：微观高置信度跨期强力杀号过滤器】")
-
     if report["rule2_kills"]:
         for item in report["rule2_kills"]:
             status = "🔥绝对断档" if item["prob"] == 0 else "❄️极度罕见"
@@ -220,10 +239,11 @@ def main():
     output.append("【查找器 3：十进制区间空间局限性下沉细分矩阵（全形态通透版）】")
     output.append("==================================================")
     for r_label, r_data in report["rule3_report"].items():
+        periods_data = r_data.get("periods_with_two", r_data.get("periods", 0))
         output.append(
-            f"\n  >>> 区间 [{r_label}] <<< ：跨年共触发双号现象 {r_data['periods']} 期"
+            f"\n  >>> 区间 [{r_label}] <<< ：跨年共触发双号现象 {periods_data} 期"
         )
-        if not r_data["slots"]:
+        if not r_data.get("slots"):
             continue
         for slots_num, s_stat in sorted(r_data["slots"].items()):
             tot = s_stat["total"] if s_stat["total"] > 0 else 1
@@ -265,7 +285,7 @@ def main():
     output.append(f"  - 最新一期真实奖号 : {last_nums}")
     output.append(f"  - 最新一期开出生肖 : {last_zodiacs} (共 {last_count} 个不同生肖)")
 
-    # 📐 严谨审计项 2：针对当期生肖组合环境，进行“理论 vs 实际偏态对冲”深度解构
+    # 🔍 核心环境审计
     output.append("\n  ==================================================")
     output.append("  🔍 核心环境严谨度审计：当期生肖环境羁绊与偏态对冲")
     output.append("  ==================================================")
@@ -278,8 +298,6 @@ def main():
         output.append(
             "    * 🛡️ [环境理论预测] : 剔除已开出4生肖后，其余8生肖在盲盒状态下的理论概率均等，下期完全随机时的回补爆发率理论上应为均值(约 55.0%)。"
         )
-
-        # 精准匹配历史库，看实际表现
         cond_key = f"当期多样性[{last_count}种生肖]且含【{target_z}】"
         if cond_key in report["rule1"]:
             data = report["rule1"][cond_key]
@@ -292,9 +310,7 @@ def main():
                     for z, _, pct in data["cold"][:2]
                 ]
             )
-            output.append(
-                f"    * 📊 [1079期实际偏态] : 跨年共触发 {data['periods']} 期"
-            )
+            output.append(f"    * 📊 [跨年实际偏态] : 跨年共触发 {data['periods']} 期")
             output.append(
                 f"      ---> 实际爆发严重超标 (正向偏态): {hot_str if hot_str else '无'}"
             )
@@ -303,7 +319,7 @@ def main():
             )
         else:
             output.append(
-                "    * 📊 [1079期实际偏态] : 历史大底中该单点环境未形成显著记录。"
+                "    * 📊 [跨年实际偏态] : 历史大底中该单点环境未形成显著记录。"
             )
     output.append("  --------------------------------------------------")
 
@@ -334,10 +350,10 @@ def main():
     output.append(
         "  【💥 预测期生肖加减权要素（源自查找器 1 单点+高阶双核心拦截线）】:"
     )
-    output.append(f"DEBUG 三生肖规则数量: {len(report.get('rule1_triplets', {}))}")
+    rule1_triplets = report.get("rule1_triplets", {})
+    output.append(f"DEBUG 三生肖规则数量: {len(rule1_triplets)}")
 
     matched_r1 = False
-
     for condition, data in report["rule1"].items():
         if condition.startswith(f"当期多样性[{last_count}种生肖]") and any(
             f"【{z}】" in condition for z in last_z_set
@@ -388,10 +404,10 @@ def main():
     matched_triplet = False
     for last_triplet in combinations(sorted(list(last_z_set)), 3):
         trip_key = (last_count, last_triplet)
-        if trip_key not in report["rule1_triplets"]:
+        if trip_key not in rule1_triplets:
             continue
         matched_triplet = True
-        t_data = report["rule1_triplets"][trip_key]
+        t_data = rule1_triplets[trip_key]
         hot_str = ", ".join(f"【{z}】" for z, _, _ in t_data["hot"][:3])
         cold_str = ", ".join(f"【{z}】" for z, _, _ in t_data["cold"])
         output.append(
@@ -428,11 +444,9 @@ def main():
             matched_r3 = True
             n1, n2 = in_range_nums[0], in_range_nums[1]
             slots_count = len([n for n in range(n1 + 1, n2)])
-            if (
-                r_label in report["rule3_report"]
-                and slots_count in report["rule3_report"][r_label]["slots"]
-            ):
-                s_stat = report["rule3_report"][r_label]["slots"][slots_count]
+            r3_data = report["rule3_report"].get(r_label)
+            if r3_data and "slots" in r3_data and slots_count in r3_data["slots"]:
+                s_stat = r3_data["slots"][slots_count]
                 tot = s_stat["total"] if s_stat["total"] > 0 else 1
                 in_pct = s_stat["in_range"] / tot
                 no_pct = s_stat["no_hit"] / tot
@@ -452,7 +466,6 @@ def main():
     output.append("\n  【🔮 预测期特码隔离形态特征拦截（源自查找器 4 规则库）】:")
 
     output.append("\n【查找器7：前三期轨迹回补规律】")
-
     trace_recovery_hot = report.get("trace_recovery_hot", {})
     if len(records) >= 3:
         curr = set(last_zodiacs)
@@ -464,9 +477,7 @@ def main():
             for z in disappear:
                 if z in trace_recovery_hot:
                     item = trace_recovery_hot[z]
-                    hot = ", ".join(
-                        f"【{a}】({b:.1%})" for a, _, b in item["hot"][:3]
-                    )
+                    hot = ", ".join(f"【{a}】({b:.1%})" for a, _, b in item["hot"][:3])
                     output.append(
                         f"    * 【{z}】连续两期出现，本期消失 -> 下期历史高频：{hot}"
                     )
@@ -475,14 +486,13 @@ def main():
     else:
         output.append("    * 历史记录不足 3 期，无法分析前三期轨迹回补规律。")
 
-    matched_r4 = False
+    # 特码特征规则输出
     num_behavior_lookup = {item[0]: item[5] for item in report["top_special_expanded"]}
     odd_biases = []
     big_biases = []
 
     for n in last_nums:
         if n in num_behavior_lookup:
-            matched_r4 = True
             rule_bh = num_behavior_lookup[n]
             odd_biases.append(rule_bh["odd_ratio"])
             big_biases.append(rule_bh["big_ratio"])
@@ -529,9 +539,10 @@ def main():
     output.append("==================================================")
     output.append("【查找器 7：跨期时间轴演化规律】")
     output.append("==================================================")
-    timeline = report.get("timeline", {}).get("prev_miss_return", {})
+    timeline = report.get("timeline", {})
+    prev_miss_return = timeline.get("prev_miss_return", {})
     for z, data in sorted(
-        timeline.items(),
+        prev_miss_return.items(),
         key=lambda x: x[1]["return_rate"],
         reverse=True,
     ):
@@ -543,12 +554,10 @@ def main():
         )
 
     output.append("")
-
-    output.append("")
     output.append("  【连续2期出现 → 本期断档 → 下一期回补】")
-
+    double_keep = timeline.get("double_keep_break", {})
     for z, data in sorted(
-        report["timeline"]["double_keep_break"].items(),
+        double_keep.items(),
         key=lambda x: x[1]["return_rate"],
         reverse=True,
     ):
@@ -560,10 +569,8 @@ def main():
 
     output.append("")
     output.append("  【连续空窗 → 下一期立即回补】")
-    for gap, data in sorted(
-        report["timeline"]["gap_finish"].items(),
-        key=lambda x: x[0],
-    ):
+    gap_return = timeline.get("gap_return", {})
+    for gap, data in sorted(gap_return.items(), key=lambda x: x[0]):
         output.append(
             f"    * 连续空窗 {gap} 期"
             f"（历史 {data['trigger']} 次）"
@@ -571,10 +578,8 @@ def main():
         )
     output.append("")
     output.append("  【连续空窗最终结束规律】")
-    for gap, data in sorted(
-        report["timeline"]["gap_finish"].items(),
-        key=lambda x: x[0],
-    ):
+    gap_finish = timeline.get("gap_finish", {})
+    for gap, data in sorted(gap_finish.items(), key=lambda x: x[0]):
         output.append(
             f"    * 连续空窗 {gap} 期"
             f"（历史 {data['trigger']} 次）"
@@ -586,7 +591,6 @@ def main():
     output.append("=" * 50)
     ranking = report["zodiac_ranking"]
     for idx, (z, info) in enumerate(ranking, 1):
-
         output.append(
             f"{idx:02d}. 【{z}】"
             f"   得分:{info['score']}"
@@ -598,11 +602,13 @@ def main():
     final_report = "\n".join(output)
     print(final_report)
 
-    with open("zodiac_advanced_report.txt", "w", encoding="utf-8") as f:
-        f.write(final_report)
-    print(
-        "\n[系统提示] 已全权移交原装类函数加载。跨年数据打通成功，结果已写入 zodiac_advanced_report.txt"
-    )
+    # 安全写入文件
+    try:
+        with open("zodiac_advanced_report.txt", "w", encoding="utf-8") as f:
+            f.write(final_report)
+        print("\n[系统提示] 跨年数据打通成功，结果已写入 zodiac_advanced_report.txt")
+    except IOError as e:
+        print(f"\n⚠️ 写入报告文件失败: {e}")
 
 
 if __name__ == "__main__":

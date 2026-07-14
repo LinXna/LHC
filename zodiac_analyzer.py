@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 class ZodiacPatternAnalyzer:
+    # ----- 可配置常量（集中管理）-----
+    EXT_PERIODS = 5  # 查找器4 未来观察期数
+    MAX_LOOKBACK = 30  # 查找器4 最大回溯期数
+    MIN_PERIODS = 4  # 执行统计分析的最小期数
+    MAX_GAP_STAT = 30  # 时间轴规则最大统计间隔
+    HOT_THRESHOLD = 0.12  # 通用联合统计热点阈值
+    # --------------------------------
+
     def __init__(self, base_zodiac="马"):
         self.zodiac_order = [
             "马",
@@ -24,7 +32,6 @@ class ZodiacPatternAnalyzer:
             "猴",
             "羊",
         ]
-        self.zodiac_cycle = self.zodiac_order  # 补齐循环别名
         if base_zodiac not in self.zodiac_order:
             raise ValueError(
                 f"无效本命肖: {base_zodiac!r}，可选: {', '.join(self.zodiac_order)}"
@@ -34,7 +41,6 @@ class ZodiacPatternAnalyzer:
 
     @staticmethod
     def _validate_draw_numbers(nums):
-        """校验开奖号码：7 个不重复整数，范围 1–49。"""
         if not isinstance(nums, list) or len(nums) != 7:
             return False
         try:
@@ -47,23 +53,33 @@ class ZodiacPatternAnalyzer:
 
     @staticmethod
     def get_base_zodiac_by_year(year_int):
-        """根据年份推导本命肖（与 main.py 保持一致）"""
         year_cycle = [
-            "猴", "鸡", "狗", "猪", "鼠", "牛",
-            "虎", "兔", "龙", "蛇", "马", "羊",
+            "猴",
+            "鸡",
+            "狗",
+            "猪",
+            "鼠",
+            "牛",
+            "虎",
+            "兔",
+            "龙",
+            "蛇",
+            "马",
+            "羊",
         ]
         return year_cycle[year_int % 12]
 
     @staticmethod
     def _safe_issue_key(record):
+        """尝试获取有效期号，失败返回 None 表示丢弃"""
         issue = record.get("issue")
         if issue is None:
-            return 0
+            return None
         try:
             return int(issue)
         except (ValueError, TypeError):
-            logger.warning(f"期号格式异常，排序置后: {issue}")
-            return 0
+            logger.warning(f"期号格式严重异常，该条记录将被丢弃: {issue}")
+            return None
 
     def _get_zodiac_map(self, base_zodiac):
         if base_zodiac not in self.zodiac_order:
@@ -80,7 +96,6 @@ class ZodiacPatternAnalyzer:
         return {i: aligned[(i - 1) % 12] for i in range(1, 50)}
 
     def load_json_data(self, file_path=None, data_dir="data"):
-
         all_records = []
 
         if not os.path.exists(data_dir):
@@ -91,10 +106,8 @@ class ZodiacPatternAnalyzer:
             logger.error(f"{data_dir} 不是一个目录")
             return []
 
-        # 如果指定文件，只读取指定文件
         if file_path:
             target_files = [file_path]
-
         else:
             target_files = sorted(
                 os.path.join(data_dir, f)
@@ -104,12 +117,9 @@ class ZodiacPatternAnalyzer:
 
         for path in target_files:
             file_records = []
-
             try:
                 with open(path, "r", encoding="utf-8") as f:
-
                     payload = json.load(f)
-
                     if not isinstance(payload, dict):
                         logger.warning(f"{path} 不是合法JSON对象")
                         continue
@@ -117,7 +127,6 @@ class ZodiacPatternAnalyzer:
                     body_list = (
                         payload.get("result", {}).get("data", {}).get("bodyList", [])
                     )
-
                     if not isinstance(body_list, list):
                         logger.warning(f"{path} 中 bodyList 格式错误")
                         continue
@@ -137,81 +146,78 @@ class ZodiacPatternAnalyzer:
                                 logger.warning(f"号码格式错误：{code_str}")
                                 continue
                             if self._validate_draw_numbers(nums):
+                                # 检查期号有效性
+                                issue_key = self._safe_issue_key(item)
+                                if issue_key is None:
+                                    logger.warning(
+                                        f"无效期号，丢弃该条记录: {item.get('issue')}"
+                                    )
+                                    continue
                                 file_records.append(
                                     {
-                                        "issue": item.get("issue"),
+                                        "issue": issue_key,
                                         "date": item.get("preDrawDate"),
                                         "numbers": [int(n) for n in nums],
                                     }
                                 )
                             else:
-                                logger.warning(f"号码校验失败（需7个不重复1-49）：{code_str}")
-
+                                logger.warning(
+                                    f"号码校验失败（需7个不重复1-49）：{code_str}"
+                                )
                         except (KeyError, ValueError, TypeError) as e:
                             logger.warning(f"跳过异常记录：{e}")
                             continue
 
-                file_records.sort(key=self._safe_issue_key)
+                file_records.sort(key=lambda x: x["issue"])
                 all_records.extend(file_records)
 
             except FileNotFoundError:
                 logger.warning(f"文件不存在，已跳过：{path}")
                 continue
-
             except PermissionError:
                 logger.warning(f"没有权限读取文件：{path}")
                 continue
-
             except UnicodeDecodeError:
                 logger.warning(f"文件编码错误：{path}")
                 continue
-
             except json.JSONDecodeError as e:
                 logger.warning(f"JSON格式错误：{path} ({e})")
                 continue
-
             except OSError as e:
                 logger.warning(f"读取文件失败：{path} ({e})")
                 continue
 
-        logger.info(f"成功加载 {len(all_records)} 条历史记录")
-
+        # 🔧 全局排序，确保跨文件记录按期号严格升序
+        all_records.sort(key=lambda x: x["issue"])
+        logger.info(f"成功加载 {len(all_records)} 条历史记录（已全局排序）")
         return all_records
 
-    # 增加通用联合统计函数
     def build_zodiac_relation_rule(
-        self, relation_source, size=2, hot_threshold=0.12, cold_zero=False
+        self, relation_source, size=2, hot_threshold=None, cold_zero=False
     ):
+        if hot_threshold is None:
+            hot_threshold = self.HOT_THRESHOLD
 
         result = {}
-
         for (div_cnt, relation), next_list in relation_source.items():
-
             counts = collections.Counter(next_list)
-
             total = len(next_list)
-
             if total == 0:
                 continue
-
             hot = [
                 (z, c, c / total)
                 for z, c in counts.items()
                 if c / total >= hot_threshold
             ]
-
             hot.sort(key=lambda x: x[1], reverse=True)
 
             if cold_zero:
-
                 cold = [
                     (z, counts.get(z, 0), 0)
                     for z in self.zodiac_order
                     if counts.get(z, 0) == 0
                 ]
-
             else:
-
                 cold = [
                     (z, counts.get(z, 0), counts.get(z, 0) / total)
                     for z in self.zodiac_order
@@ -223,10 +229,8 @@ class ZodiacPatternAnalyzer:
                 "hot": hot,
                 "cold": cold,
             }
-
         return result
 
-    # 🌟 名字锁死为 compute_patterns，彻底解决报错！
     def compute_patterns(self, sorted_records):
         if sorted_records is None:
             raise ValueError("sorted_records 不能为 None")
@@ -246,10 +250,7 @@ class ZodiacPatternAnalyzer:
             }
 
         total_periods = len(sorted_records)
-
-        MIN_PERIODS = 4
-
-        if total_periods < MIN_PERIODS:
+        if total_periods < self.MIN_PERIODS:
             return {
                 "total": total_periods,
                 "warning": "历史数据不足，无法执行统计分析。",
@@ -265,7 +266,6 @@ class ZodiacPatternAnalyzer:
 
         history_data = []
         valid_records = []
-
         for record in sorted_records:
             if not isinstance(record, dict):
                 continue
@@ -275,10 +275,8 @@ class ZodiacPatternAnalyzer:
             history_data.append([int(n) for n in nums])
             valid_records.append(record)
 
-        # 重新统计有效数据数量
         total_periods = len(history_data)
-
-        if total_periods < MIN_PERIODS:
+        if total_periods < self.MIN_PERIODS:
             return {
                 "total": total_periods,
                 "warning": "有效历史数据不足，无法执行统计分析。",
@@ -292,11 +290,9 @@ class ZodiacPatternAnalyzer:
                 "score": {},
             }
 
-        # 基础生肖矩阵转化（跨年记录按 archive_year 选用对应本命肖映射）
         zodiac_matrix = []
         aligned_records = []
         aligned_history = []
-
         for record, group in zip(valid_records, history_data):
             try:
                 year = record.get("archive_year")
@@ -314,11 +310,8 @@ class ZodiacPatternAnalyzer:
 
         valid_records = aligned_records
         history_data = aligned_history
-
-        # 再次确认生肖矩阵数据足够
         total_periods = len(zodiac_matrix)
-
-        if total_periods < MIN_PERIODS:
+        if total_periods < self.MIN_PERIODS:
             return {
                 "total": total_periods,
                 "warning": "有效生肖数据不足，无法执行统计分析。",
@@ -337,84 +330,54 @@ class ZodiacPatternAnalyzer:
         # =========================================================================
         # 查找器7：前三期轨迹回补规则
         # =========================================================================
-
         trace_disappear_pool = collections.defaultdict(list)
-
         for i in range(3, total_periods - 1):
-
             last1 = set(zodiac_matrix[i - 1])
             last2 = set(zodiac_matrix[i - 2])
             curr = set(zodiac_matrix[i])
-
-            # 前两期连续出现，本期消失
             disappeared = (last1 & last2) - curr
-
             if not disappeared:
                 continue
-
             next_period = zodiac_matrix[i + 1]
-
             for z in disappeared:
                 trace_disappear_pool[z].extend(next_period)
 
         trace_recovery_hot = {}
-
         for z, pool in trace_disappear_pool.items():
-
             counts = collections.Counter(pool)
-
             total = len(pool)
-
             if total == 0:
                 continue
-
             hot = []
-
             for name, cnt in counts.items():
-
                 rate = cnt / total if total else 0
-
                 if rate >= 0.10:
-
                     hot.append((name, cnt, rate))
-
             hot.sort(key=lambda x: x[2], reverse=True)
-
             trace_recovery_hot[z] = {"samples": total // 7, "hot": hot}
 
         # =========================================================================
-        # 统一生肖评分池（V6.2）
+        # 统一生肖评分池
         # =========================================================================
-
         zodiac_score = {
-            z: {
-                "score": 0,
-                "reasons": [],
-                "confidence": 0,
-            }
-            for z in self.zodiac_order
+            z: {"score": 0, "reasons": [], "confidence": 0} for z in self.zodiac_order
         }
 
         def add_score(zodiac, score, reason, confidence=1):
-            """统一加权接口"""
-
             if zodiac not in zodiac_score:
                 return
-
             zodiac_score[zodiac]["score"] += score
             zodiac_score[zodiac]["confidence"] += confidence
             zodiac_score[zodiac]["reasons"].append(reason)
 
         # =========================================================================
-        # 1 & 2. 查找器 1 升级：单生肖交叉 + 二次生肖对高阶联合联合排查
+        # 1 & 2. 单生肖交叉 + 多对组合
         # =========================================================================
         diversity_history = [len(set(z_list)) for z_list in zodiac_matrix]
-        # 🌟 新增：多生肖对高阶交叉大池
         rule1_detail = collections.defaultdict(list)
         rule1_pair_detail = collections.defaultdict(list)
         rule1_triplet_detail = collections.defaultdict(list)
 
-        # 📈 【严谨升级项】：精密拆解大底
         repeat_stats_by_div = collections.defaultdict(
             lambda: {
                 "total_cases": 0,
@@ -429,27 +392,20 @@ class ZodiacPatternAnalyzer:
             next_z_list = zodiac_matrix[i + 1]
             next_z_set = set(next_z_list)
 
-            # 统计重号大底规律
             intersect = curr_z_set.intersection(next_z_set)
             intersect_cnt = len(intersect)
-
             repeat_stats_by_div[curr_div]["total_cases"] += 1
             if intersect_cnt > 0:
                 repeat_stats_by_div[curr_div]["repeated_cases"] += 1
                 repeat_stats_by_div[curr_div]["repeat_counts"][intersect_cnt] += 1
 
-            # A. 单生肖交叉
             for z in curr_z_set:
                 rule1_detail[(curr_div, z)].extend(next_z_list)
-
-            # B. 🌟 核心增补两两组合
             for z_pair in combinations(sorted(list(curr_z_set)), 2):
                 rule1_pair_detail[(curr_div, z_pair)].extend(next_z_list)
-
-            # C. 三生肖联合规则
             for z_triplet in combinations(sorted(list(curr_z_set)), 3):
                 rule1_triplet_detail[(curr_div, z_triplet)].extend(next_z_list)
-        # 整理单生肖报告
+
         rule1_report = {}
         for (div_cnt, z), nxt_list in rule1_detail.items():
             counts = collections.Counter(nxt_list)
@@ -461,12 +417,9 @@ class ZodiacPatternAnalyzer:
             ]
             hot_z.sort(key=lambda x: x[1], reverse=True)
 
-            # 高频生肖加分
             for z_name, cnt, pct in hot_z:
-
                 if pct >= 0.15:
                     add_score(z_name, 3, f"查找器1 高频({pct:.1%})", total_next // 7)
-
                 elif pct >= 0.10:
                     add_score(z_name, 2, f"查找器1 热点({pct:.1%})", total_next // 7)
 
@@ -476,16 +429,10 @@ class ZodiacPatternAnalyzer:
                 if (counts.get(z_all, 0) / total_next) < 0.05
             ]
             cold_z.sort(key=lambda x: x[2])
-
-            # ===== 冰点减分 =====
             for z_name, cnt, pct in cold_z:
-
                 if pct == 0:
-
                     add_score(z_name, -4, "查找器1 绝对冰点", total_next // 7)
-
                 elif pct < 0.03:
-
                     add_score(z_name, -2, f"查找器1 冷门({pct:.1%})", total_next // 7)
 
             morphology_type = "正常形态"
@@ -493,7 +440,6 @@ class ZodiacPatternAnalyzer:
                 morphology_type = "低多样性聚集形态"
             elif div_cnt >= 6:
                 morphology_type = "高多样性饱和形态"
-
             rule1_report[f"当期多样性[{div_cnt}种生肖]且含【{z}】"] = {
                 "periods": total_next // 7,
                 "morphology": morphology_type,
@@ -501,16 +447,13 @@ class ZodiacPatternAnalyzer:
                 "cold": cold_z,
             }
 
-        # 整理高阶生肖对报告
         rule1_pair_report = self.build_zodiac_relation_rule(
             rule1_pair_detail, size=2, hot_threshold=0.12, cold_zero=True
         )
-
         rule1_triplet_report = self.build_zodiac_relation_rule(
             rule1_triplet_detail, size=3, hot_threshold=0.12, cold_zero=True
         )
 
-        # 📊 注入升级后的1~7细分字典
         diversity_repeat_rule = {
             div: {
                 "total_occur": stat["total_cases"],
@@ -541,38 +484,23 @@ class ZodiacPatternAnalyzer:
         ]
 
         # =========================================================================
-        # 4. 查找器 2：微观强力杀号过滤器
+        # 4. 微观强力杀号过滤器
         # =========================================================================
         single_cross_kills = []
-
         for z_curr in self.zodiac_order:
-
             idx_list = [i for i in range(total_valid_p) if z_curr in zodiac_matrix[i]]
-
-            # 样本不足，不进入杀号池
             if len(idx_list) < 20:
                 continue
-
             next_pool = []
-
             for idx in idx_list:
                 next_pool.extend(zodiac_matrix[idx + 1])
-
-            # 下一期生肖总数量
             next_total = len(next_pool)
-
             if next_total == 0:
                 continue
-
-            # 统计下一期生肖频次
             counts = collections.Counter(next_pool)
-
             for z_next in self.zodiac_order:
-
                 prob = counts.get(z_next, 0) / next_total
-
                 if prob <= 0.05:
-
                     single_cross_kills.append(
                         {
                             "curr": z_curr,
@@ -581,11 +509,10 @@ class ZodiacPatternAnalyzer:
                             "trigger_p": len(idx_list),
                         }
                     )
-
         single_cross_kills.sort(key=lambda x: (x["prob"], -x["trigger_p"]))
 
         # =========================================================================
-        # 5. 查找器 3：十进制区间空间局限性矩阵
+        # 5. 十进制区间空间局限性矩阵（扩展版）
         # =========================================================================
         ranges_config = {
             "0-9": (1, 9),
@@ -606,11 +533,16 @@ class ZodiacPatternAnalyzer:
                     "no_hit": 0,
                 }
             )
+            num_count_dist = collections.Counter()
+
             for i in range(total_valid_p):
                 curr_nums = history_data[i]
                 next_nums = history_data[i + 1]
                 in_range_nums = sorted([n for n in curr_nums if r_min <= n <= r_max])
-                if len(in_range_nums) == 2:
+                in_count = len(in_range_nums)
+                num_count_dist[in_count] += 1
+
+                if in_count == 2:
                     r_trig_p += 1
                     n1, n2 = in_range_nums[0], in_range_nums[1]
                     available_in = [n for n in range(n1 + 1, n2)]
@@ -633,14 +565,17 @@ class ZodiacPatternAnalyzer:
                             slots_linkage[slots_count]["out_less"] += 1
                         if not (is_in or is_greater or is_less):
                             slots_linkage[slots_count]["no_hit"] += 1
-            rule3_report[r_label] = {"periods": r_trig_p, "slots": dict(slots_linkage)}
+
+            rule3_report[r_label] = {
+                "periods_with_two": r_trig_p,
+                "num_count_distribution": dict(num_count_dist),
+                "slots": dict(slots_linkage),
+            }
 
         # =========================================================================
-        # 6. 查找器 4 升级：引入动态时间轴数据隔离（加入实时进度条打印）
+        # 6. 查找器 4：特码隔离特征矩阵（加入回溯窗口限制）
         # =========================================================================
         special_expanded_by_num = {}
-        EXT_PERIODS = 5
-
         logger.info("正在深度解构 查找器 4（特码隔离特征矩阵）...")
 
         num_positions = collections.defaultdict(list)
@@ -651,11 +586,9 @@ class ZodiacPatternAnalyzer:
         for target_idx in range(total_periods):
             if target_idx % max(1, total_periods // 10) == 0:
                 percent = (target_idx / total_periods) * 100
-                logger.debug(
-                    "查找器4 特征矩阵进度 %.0f%%", percent
-                )
+                logger.debug("查找器4 特征矩阵进度 %.0f%%", percent)
 
-            scan_limit = target_idx - EXT_PERIODS
+            scan_limit = target_idx - self.EXT_PERIODS
             if scan_limit <= 0:
                 continue
 
@@ -675,13 +608,14 @@ class ZodiacPatternAnalyzer:
                 if not positions:
                     continue
                 cutoff = bisect_left(positions, scan_limit)
+                start_pos = max(0, cutoff - self.MAX_LOOKBACK)
+                recent_positions = positions[start_pos:cutoff]
 
-                for hist_i in positions[:cutoff]:
+                for hist_i in recent_positions:
                     appear_count += 1
-
                     f_zodiacs = []
                     f_nums = []
-                    for offset in range(1, EXT_PERIODS + 1):
+                    for offset in range(1, self.EXT_PERIODS + 1):
                         f_zodiacs.extend(zodiac_matrix[hist_i + offset])
                         f_nums.extend(history_data[hist_i + offset])
 
@@ -713,7 +647,6 @@ class ZodiacPatternAnalyzer:
                         else "无"
                     )
                     tot_fn = total_future_numbers if total_future_numbers > 0 else 1
-
                     top_tails = sorted(
                         tail_dist.items(), key=lambda x: x[1], reverse=True
                     )[:2]
@@ -741,280 +674,169 @@ class ZodiacPatternAnalyzer:
         logger.info("查找器4 特码隔离特征矩阵清洗完毕")
 
         # =========================================================================
-        # 7. 查找器 7：前三期生肖轨迹断层回补矩阵
+        # 7. 查找器 7：三期轨迹回补矩阵
         # =========================================================================
-
-        logger.info("正在深度解构 查找器 7（三期生肖轨迹回补矩阵）...")
-
         trace_recovery_matrix = {
             "prev1_missing": {},
             "prev2_missing": {},
             "prev3_missing": {},
             "multi_gap": {},
         }
-
-        # -------------------------------
-        # 规则1:
-        # 前 N 期连续出现，本期消失 -> 下一期回补概率
-        # -------------------------------
-
         for gap_type, gap_size in [
             ("prev1_missing", 1),
             ("prev2_missing", 2),
             ("prev3_missing", 3),
         ]:
-
             trigger_pool = collections.defaultdict(list)
-
             for i in range(gap_size, total_valid_p):
-
                 consecutive_set = set(zodiac_matrix[i - 1])
                 for back in range(2, gap_size + 1):
                     consecutive_set &= set(zodiac_matrix[i - back])
-
                 current_set = set(zodiac_matrix[i])
                 next_set = set(zodiac_matrix[i + 1])
-
                 missing_z = consecutive_set - current_set
-
                 for z in missing_z:
                     trigger_pool[z].append(1 if z in next_set else 0)
 
             result = {}
-
             for z, values in trigger_pool.items():
-
                 total = len(values)
-
                 if total < 10:
                     continue
-
-                hit = sum(values)
-
-                result[z] = {"trigger": total, "recover": hit, "rate": hit / total}
-
+                result[z] = {
+                    "trigger": total,
+                    "recover": sum(values),
+                    "rate": sum(values) / total,
+                }
             trace_recovery_matrix[gap_type] = result
 
-        # -------------------------------
-        # 规则2:
-        # 前三期每期均出现，本期消失 -> 下一期回补概率
-        # -------------------------------
-
         multi_trigger = collections.defaultdict(list)
-
         for i in range(3, total_valid_p):
-
             consecutive_three = set(zodiac_matrix[i - 1])
             for back in range(2, 4):
                 consecutive_three &= set(zodiac_matrix[i - back])
-
             current_set = set(zodiac_matrix[i])
             next_set = set(zodiac_matrix[i + 1])
-
             disappear = consecutive_three - current_set
-
             for z in disappear:
                 multi_trigger[z].append(1 if z in next_set else 0)
-
         multi_result = {}
-
         for z, values in multi_trigger.items():
-
             total = len(values)
-
             if total < 10:
                 continue
-
             multi_result[z] = {
                 "trigger": total,
                 "recover": sum(values),
                 "rate": sum(values) / total,
             }
-
         trace_recovery_matrix["multi_gap"] = multi_result
 
-        logger.info("查找器7 三期轨迹回补矩阵完成")
-
         # =========================================================================
-        # 7. 查找器 6 深度关闭
+        # 8. 查找器 6 保留空壳
         # =========================================================================
         combo_clash_rules = []
 
         # =========================================================================
-        # 7. 查找器7：跨期时间轴演化引擎（V2）
+        # 9. 查找器7：跨期时间轴引擎（限制最大间隔）
         # =========================================================================
-
         timeline_report = {}
 
-        # ----------------------------------------------------------
-        # 规则1：上一期出现 -> 本期断档 -> 下一期是否回补
-        # ----------------------------------------------------------
-
-        timeline_rule1 = collections.defaultdict(
-            lambda: {
-                "trigger": 0,
-                "return": 0,
-            }
-        )
-
-        # ----------------------------------------------------------
-        # 规则2：连续2期出现 -> 本期断档 -> 下一期是否回补
-        # ----------------------------------------------------------
-
-        timeline_rule2 = collections.defaultdict(
-            lambda: {
-                "trigger": 0,
-                "return": 0,
-            }
-        )
-
+        # 规则1 & 规则2
+        timeline_rule1 = collections.defaultdict(lambda: {"trigger": 0, "return": 0})
+        timeline_rule2 = collections.defaultdict(lambda: {"trigger": 0, "return": 0})
         for i in range(2, total_periods - 1):
-
             prev_set = set(zodiac_matrix[i - 1])
             curr_set = set(zodiac_matrix[i])
             next_set = set(zodiac_matrix[i + 1])
-
             for z in self.zodiac_order:
-
-                # 上一期有，本期没有
                 if z in prev_set and z not in curr_set:
-
                     timeline_rule1[z]["trigger"] += 1
-
                     if z in next_set:
                         timeline_rule1[z]["return"] += 1
-
-                # 连续2期都有，本期断档
                 if (
                     z in set(zodiac_matrix[i - 2])
                     and z in prev_set
                     and z not in curr_set
                 ):
-
                     timeline_rule2[z]["trigger"] += 1
-
                     if z in next_set:
                         timeline_rule2[z]["return"] += 1
 
         timeline_report["prev_miss_return"] = {}
-
         for z, stat in timeline_rule1.items():
-
             if stat["trigger"] == 0:
                 continue
-
             timeline_report["prev_miss_return"][z] = {
                 "trigger": stat["trigger"],
                 "return": stat["return"],
                 "return_rate": stat["return"] / stat["trigger"],
             }
-
         timeline_report["double_keep_break"] = {}
-
         for z, stat in timeline_rule2.items():
-
             if stat["trigger"] == 0:
                 continue
-
             timeline_report["double_keep_break"][z] = {
                 "trigger": stat["trigger"],
                 "return": stat["return"],
                 "return_rate": stat["return"] / stat["trigger"],
             }
 
-        # ----------------------------------------------------------
-        # 规则3：连续空窗N期 -> 下一期是否回补（修正版）
-        # ----------------------------------------------------------
-
-        timeline_gap_rule = collections.defaultdict(
-            lambda: {
-                "trigger": 0,
-                "return": 0,
-            }
-        )
-
+        # 规则3 & 规则4：限制间隔不超过 MAX_GAP_STAT
+        timeline_gap_rule = collections.defaultdict(lambda: {"trigger": 0, "return": 0})
         for z in self.zodiac_order:
-
             gap = 0
-
             for i in range(total_periods - 1):
-
                 curr_set = set(zodiac_matrix[i])
                 next_set = set(zodiac_matrix[i + 1])
-
                 if z not in curr_set:
-
                     gap += 1
-
-                    timeline_gap_rule[gap]["trigger"] += 1
-
+                    stat_gap = min(gap, self.MAX_GAP_STAT)
+                    timeline_gap_rule[stat_gap]["trigger"] += 1
                     if z in next_set:
-                        timeline_gap_rule[gap]["return"] += 1
-
+                        timeline_gap_rule[stat_gap]["return"] += 1
                 else:
-
                     gap = 0
 
         timeline_report["gap_return"] = {}
-
         for gap, stat in sorted(timeline_gap_rule.items()):
-
             if stat["trigger"] == 0:
                 continue
-
             timeline_report["gap_return"][gap] = {
                 "trigger": stat["trigger"],
                 "return": stat["return"],
                 "return_rate": stat["return"] / stat["trigger"],
             }
 
-        # ----------------------------------------------------------
-        # 规则4：连续缺席 N 期后回补，且下一期是否连庄
-        # ----------------------------------------------------------
-
         timeline_gap_finish = collections.defaultdict(
-            lambda: {
-                "trigger": 0,
-                "return": 0,
-            }
+            lambda: {"trigger": 0, "return": 0}
         )
-
         for z in self.zodiac_order:
-
             gap = 0
-
             for i in range(total_periods):
-
                 curr_set = set(zodiac_matrix[i])
-
                 if z not in curr_set:
-
                     gap += 1
-
                 else:
-
                     if gap > 0:
-
-                        timeline_gap_finish[gap]["trigger"] += 1
+                        stat_gap = min(gap, self.MAX_GAP_STAT)
+                        timeline_gap_finish[stat_gap]["trigger"] += 1
                         if i + 1 < total_periods and z in set(zodiac_matrix[i + 1]):
-                            timeline_gap_finish[gap]["return"] += 1
-
+                            timeline_gap_finish[stat_gap]["return"] += 1
                     gap = 0
 
         timeline_report["gap_finish"] = {}
-
         for gap, stat in sorted(timeline_gap_finish.items()):
-
             if stat["trigger"] == 0:
                 continue
-
             timeline_report["gap_finish"][gap] = {
                 "trigger": stat["trigger"],
                 "return": stat["return"],
                 "return_rate": stat["return"] / stat["trigger"],
             }
+
         # =========================================================================
-        # 8. 查找器 8：逆向追踪特征
+        # 10. 查找器 8：逆向追踪特征
         # =========================================================================
         reverse_trace_report = []
         hot_groups = [p for p, freq in pair_period_dist.items() if freq >= 3]
