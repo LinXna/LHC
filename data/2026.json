@@ -10,7 +10,7 @@
           8,
           4,
           4,
-          9,
+          10,
           5,
           3,
           7,
@@ -36,6 +36,98 @@
         ]
       },
       "bodyList": [
+        {
+          "issue": 74,
+          "preDrawDate": "2026-07-09",
+          "preDrawCode": "21,7,38,18,1,33,28",
+          "color": [
+            2,
+            1,
+            2,
+            1,
+            1,
+            2,
+            2
+          ],
+          "czAndFe": [
+            11,
+            1,
+            6,
+            2,
+            7,
+            11,
+            4
+          ],
+          "czAndFeSeven": [
+            -3,
+            -12,
+            -6,
+            1,
+            -1,
+            -35,
+            -4,
+            -9,
+            -5,
+            -7,
+            -18,
+            -2
+          ],
+          "seventhSingleDouble": 1,
+          "seventhBigSmall": 0,
+          "totalBigSmall": 1,
+          "totalSingleDouble": 1,
+          "sumTotal": 146,
+          "nanairo": 1,
+          "seventhCompositeDouble": 1,
+          "seventhCompositeBig": 0,
+          "seventhMantissaBig": 0
+        },
+        {
+          "issue": 73,
+          "preDrawDate": "2026-07-07",
+          "preDrawCode": "37,48,34,49,5,43,27",
+          "color": [
+            3,
+            3,
+            1,
+            2,
+            2,
+            2,
+            2
+          ],
+          "czAndFe": [
+            7,
+            8,
+            10,
+            7,
+            3,
+            1,
+            5
+          ],
+          "czAndFeSeven": [
+            -2,
+            -11,
+            -5,
+            -19,
+            1,
+            -34,
+            -3,
+            -8,
+            -4,
+            -6,
+            -17,
+            -1
+          ],
+          "seventhSingleDouble": 0,
+          "seventhBigSmall": 0,
+          "totalBigSmall": 0,
+          "totalSingleDouble": 0,
+          "sumTotal": 243,
+          "nanairo": 1,
+          "seventhCompositeDouble": 0,
+          "seventhCompositeBig": 0,
+          "seventhMantissaBig": 0
+        },
         {
           "issue": 72,
           "preDrawDate": "2026-07-05",

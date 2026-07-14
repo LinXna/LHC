@@ -138,9 +138,9 @@ def main():
             f"    * 历史当期共开出 【{div}】 种不同生肖时 (跨年共现 {stat['total_occur']} 期) -> 下期[临期生肖重复出现]的总概率为: {stat['repeat_rate']:.1%}"
         )
         # 获取由升级后的 zodiac_analyzer 统计出的精确重复个数字典
-        rep_counts = stat.get("repeat_counts", {1: 0, 2: 0, 3: 0, 4: 0})
+        rep_counts = stat.get("repeat_counts", {})
         total_occur = stat["total_occur"] if stat["total_occur"] > 0 else 1
-        for k in range(1, 5):
+        for k in range(1, 8):
             k_count = rep_counts.get(k, 0)
             k_rate = k_count / total_occur
             output.append(
@@ -183,27 +183,27 @@ def main():
     if pair_printed_count == 0:
         output.append("    * 当前暂无满足高频爆发或绝对硬杀的高阶生肖对联合特征形态。")
 
-        output.append("\n【查找器 7：前三期生肖轨迹断层回补矩阵】")
+    output.append("\n【查找器 7：前三期生肖轨迹断层回补矩阵】")
 
-        trace = report.get("trace_recovery", {})
+    trace = report.get("trace_recovery", {})
 
-        for name, data in trace.items():
+    for name, data in trace.items():
 
-            if not data:
-                continue
+        if not data:
+            continue
 
-            output.append(f"  >>> {name}")
+        output.append(f"  >>> {name}")
 
-            sorted_data = sorted(data.items(), key=lambda x: x[1]["rate"], reverse=True)
+        sorted_data = sorted(data.items(), key=lambda x: x[1]["rate"], reverse=True)
 
-            for z, stat in sorted_data[:5]:
+        for z, stat in sorted_data[:5]:
 
-                output.append(
-                    f"    * 【{z}】: "
-                    f"触发 {stat['trigger']} 次 | "
-                    f"下一期回补 {stat['recover']} 次 | "
-                    f"概率 {stat['rate']:.1%}"
-                )
+            output.append(
+                f"    * 【{z}】: "
+                f"触发 {stat['trigger']} 次 | "
+                f"下一期回补 {stat['recover']} 次 | "
+                f"概率 {stat['rate']:.1%}"
+            )
 
     output.append("\n【查找器 2：微观高置信度跨期强力杀号过滤器】")
 
@@ -453,21 +453,27 @@ def main():
 
     output.append("\n【查找器7：前三期轨迹回补规律】")
 
-    curr = set(last_zodiacs)
-    last1 = set([analyzer.zodiac_map[n] for n in records[-2]["numbers"]])
-    last2 = set([analyzer.zodiac_map[n] for n in records[-3]["numbers"]])
+    trace_recovery_hot = report.get("trace_recovery_hot", {})
+    if len(records) >= 3:
+        curr = set(last_zodiacs)
+        last1 = set(analyzer.zodiac_map[n] for n in records[-2]["numbers"])
+        last2 = set(analyzer.zodiac_map[n] for n in records[-3]["numbers"])
 
-    disappear = (last1 & last2) - curr
-    if disappear:
-        for z in disappear:
-            if z in report["trace_recovery"]:
-                item = report["trace_recovery"][z]
-                hot = ", ".join(f"【{a}】({b:.1%})" for a, _, b in item["hot"][:3])
-                output.append(
-                    f"    * 【{z}】连续两期出现，本期消失 -> 下期历史高频：{hot}"
-                )
+        disappear = (last1 & last2) - curr
+        if disappear:
+            for z in disappear:
+                if z in trace_recovery_hot:
+                    item = trace_recovery_hot[z]
+                    hot = ", ".join(
+                        f"【{a}】({b:.1%})" for a, _, b in item["hot"][:3]
+                    )
+                    output.append(
+                        f"    * 【{z}】连续两期出现，本期消失 -> 下期历史高频：{hot}"
+                    )
+        else:
+            output.append("    * 当前未发现连续两期消失的生肖。")
     else:
-        output.append("    * 当前未发现连续两期消失的生肖。")
+        output.append("    * 历史记录不足 3 期，无法分析前三期轨迹回补规律。")
 
     matched_r4 = False
     num_behavior_lookup = {item[0]: item[5] for item in report["top_special_expanded"]}
