@@ -51,10 +51,10 @@ def save_year_data(year, data):
 
 
 def main():
-    current_year = 2000
+    current_year = 2026
     # current_year = datetime.now().year
     # 获取最近20年（包含当前年）
-    years = range(current_year, current_year - 50, -1)  # 2026, 2025, 2024, 2023, 2022
+    years = range(current_year, current_year - 2, -1)  # 2026, 2025, 2024, 2023, 2022
 
     for year in years:
         print(f"⏳ 正在获取 {year} 年的数据...")

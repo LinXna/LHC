@@ -1,0 +1,995 @@
+{
+  "schema": 1,
+  "generated_at": "2026-07-20T10:40:51.460486+00:00",
+  "source_template": "https://lottery.hk/en/mark-six/results/{year}",
+  "years": [
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "counts": {
+    "local": 2267,
+    "archive": 2272,
+    "corrections": 32,
+    "missing_local": 5,
+    "mismatched_local": 27,
+    "local_not_in_archive": 0
+  },
+  "local_not_in_archive": [],
+  "corrections": [
+    {
+      "year": 2012,
+      "issue": 140,
+      "date": "2012-12-04",
+      "numbers": [
+        7,
+        10,
+        11,
+        18,
+        37,
+        47,
+        4
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2012",
+      "reason": [
+        "missing_local_record"
+      ],
+      "local": null
+    },
+    {
+      "year": 2012,
+      "issue": 152,
+      "date": "2012-12-31",
+      "numbers": [
+        5,
+        6,
+        25,
+        30,
+        32,
+        48,
+        45
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2012",
+      "reason": [
+        "missing_local_record"
+      ],
+      "local": null
+    },
+    {
+      "year": 2013,
+      "issue": 108,
+      "date": "2013-09-16",
+      "numbers": [
+        17,
+        22,
+        31,
+        39,
+        45,
+        47,
+        49
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2013",
+      "reason": [
+        "missing_local_record"
+      ],
+      "local": null
+    },
+    {
+      "year": 2013,
+      "issue": 109,
+      "date": "2013-09-19",
+      "numbers": [
+        3,
+        15,
+        18,
+        26,
+        45,
+        49,
+        41
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2013",
+      "reason": [
+        "missing_local_record"
+      ],
+      "local": null
+    },
+    {
+      "year": 2013,
+      "issue": 110,
+      "date": "2013-09-21",
+      "numbers": [
+        22,
+        25,
+        35,
+        36,
+        39,
+        47,
+        31
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2013",
+      "reason": [
+        "missing_local_record"
+      ],
+      "local": null
+    },
+    {
+      "year": 2010,
+      "issue": 147,
+      "date": "2010-12-18",
+      "numbers": [
+        15,
+        19,
+        34,
+        39,
+        44,
+        45,
+        23
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2010",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2010,
+        "issue": 147,
+        "date": "2010-12-17",
+        "numbers": [
+          45,
+          15,
+          39,
+          19,
+          34,
+          44,
+          23
+        ]
+      }
+    },
+    {
+      "year": 2013,
+      "issue": 131,
+      "date": "2013-11-10",
+      "numbers": [
+        13,
+        31,
+        32,
+        35,
+        39,
+        42,
+        16
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2013",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2013,
+        "issue": 131,
+        "date": "2013-11-09",
+        "numbers": [
+          32,
+          13,
+          35,
+          39,
+          42,
+          31,
+          16
+        ]
+      }
+    },
+    {
+      "year": 2013,
+      "issue": 149,
+      "date": "2013-12-22",
+      "numbers": [
+        12,
+        13,
+        18,
+        41,
+        43,
+        49,
+        39
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2013",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2013,
+        "issue": 149,
+        "date": "2013-12-21",
+        "numbers": [
+          49,
+          18,
+          43,
+          13,
+          41,
+          12,
+          39
+        ]
+      }
+    },
+    {
+      "year": 2013,
+      "issue": 150,
+      "date": "2013-12-25",
+      "numbers": [
+        4,
+        21,
+        25,
+        45,
+        47,
+        49,
+        6
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2013",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2013,
+        "issue": 150,
+        "date": "2013-12-26",
+        "numbers": [
+          4,
+          47,
+          45,
+          21,
+          49,
+          25,
+          6
+        ]
+      }
+    },
+    {
+      "year": 2013,
+      "issue": 152,
+      "date": "2013-12-31",
+      "numbers": [
+        7,
+        9,
+        12,
+        40,
+        42,
+        44,
+        14
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2013",
+      "reason": [
+        "main_numbers",
+        "special_number"
+      ],
+      "local": {
+        "year": 2013,
+        "issue": 152,
+        "date": "2013-12-31",
+        "numbers": [
+          32,
+          37,
+          19,
+          25,
+          33,
+          10,
+          27
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 5,
+      "date": "2014-01-12",
+      "numbers": [
+        3,
+        16,
+        36,
+        39,
+        42,
+        44,
+        17
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 5,
+        "date": "2014-01-11",
+        "numbers": [
+          36,
+          39,
+          44,
+          16,
+          42,
+          3,
+          17
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 13,
+      "date": "2014-01-30",
+      "numbers": [
+        2,
+        3,
+        4,
+        16,
+        26,
+        36,
+        45
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 13,
+        "date": "2014-02-01",
+        "numbers": [
+          26,
+          36,
+          16,
+          3,
+          2,
+          4,
+          45
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 16,
+      "date": "2014-02-09",
+      "numbers": [
+        20,
+        21,
+        35,
+        37,
+        47,
+        48,
+        14
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 16,
+        "date": "2014-02-08",
+        "numbers": [
+          47,
+          20,
+          35,
+          21,
+          37,
+          48,
+          14
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 25,
+      "date": "2014-03-02",
+      "numbers": [
+        11,
+        16,
+        19,
+        21,
+        38,
+        46,
+        34
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 25,
+        "date": "2014-03-01",
+        "numbers": [
+          21,
+          46,
+          16,
+          19,
+          11,
+          38,
+          34
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 55,
+      "date": "2014-05-11",
+      "numbers": [
+        11,
+        16,
+        26,
+        38,
+        45,
+        49,
+        5
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 55,
+        "date": "2014-05-10",
+        "numbers": [
+          26,
+          38,
+          45,
+          49,
+          16,
+          11,
+          5
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 58,
+      "date": "2014-05-18",
+      "numbers": [
+        9,
+        12,
+        21,
+        27,
+        37,
+        45,
+        7
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 58,
+        "date": "2014-05-17",
+        "numbers": [
+          21,
+          37,
+          45,
+          27,
+          9,
+          12,
+          7
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 65,
+      "date": "2014-06-02",
+      "numbers": [
+        3,
+        13,
+        19,
+        20,
+        36,
+        39,
+        15
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 65,
+        "date": "2014-06-03",
+        "numbers": [
+          39,
+          3,
+          19,
+          13,
+          36,
+          20,
+          15
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 66,
+      "date": "2014-06-04",
+      "numbers": [
+        10,
+        11,
+        25,
+        33,
+        40,
+        46,
+        6
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 66,
+        "date": "2014-06-05",
+        "numbers": [
+          40,
+          25,
+          33,
+          46,
+          10,
+          11,
+          6
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 69,
+      "date": "2014-06-12",
+      "numbers": [
+        3,
+        18,
+        21,
+        41,
+        44,
+        45,
+        15
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 69,
+        "date": "2014-06-14",
+        "numbers": [
+          3,
+          44,
+          21,
+          18,
+          41,
+          45,
+          15
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 75,
+      "date": "2014-06-29",
+      "numbers": [
+        15,
+        23,
+        26,
+        38,
+        46,
+        47,
+        21
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 75,
+        "date": "2014-06-30",
+        "numbers": [
+          15,
+          23,
+          46,
+          38,
+          47,
+          26,
+          21
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 77,
+      "date": "2014-07-05",
+      "numbers": [
+        10,
+        14,
+        32,
+        36,
+        37,
+        38,
+        47
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 77,
+        "date": "2014-07-06",
+        "numbers": [
+          36,
+          32,
+          10,
+          38,
+          14,
+          37,
+          47
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 89,
+      "date": "2014-08-02",
+      "numbers": [
+        3,
+        22,
+        23,
+        26,
+        42,
+        48,
+        28
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 89,
+        "date": "2014-08-03",
+        "numbers": [
+          42,
+          23,
+          48,
+          26,
+          22,
+          3,
+          28
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 101,
+      "date": "2014-08-30",
+      "numbers": [
+        15,
+        18,
+        24,
+        27,
+        39,
+        49,
+        6
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 101,
+        "date": "2014-09-01",
+        "numbers": [
+          15,
+          27,
+          18,
+          24,
+          49,
+          39,
+          6
+        ]
+      }
+    },
+    {
+      "year": 2014,
+      "issue": 105,
+      "date": "2014-09-13",
+      "numbers": [
+        3,
+        12,
+        40,
+        43,
+        48,
+        49,
+        32
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2014",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2014,
+        "issue": 105,
+        "date": "2014-09-14",
+        "numbers": [
+          43,
+          48,
+          3,
+          12,
+          40,
+          49,
+          32
+        ]
+      }
+    },
+    {
+      "year": 2015,
+      "issue": 62,
+      "date": "2015-05-28",
+      "numbers": [
+        2,
+        7,
+        20,
+        23,
+        44,
+        47,
+        30
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2015",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2015,
+        "issue": 62,
+        "date": "2015-05-29",
+        "numbers": [
+          2,
+          47,
+          44,
+          7,
+          23,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "year": 2015,
+      "issue": 64,
+      "date": "2015-06-02",
+      "numbers": [
+        11,
+        12,
+        15,
+        21,
+        38,
+        42,
+        25
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2015",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2015,
+        "issue": 64,
+        "date": "2015-06-04",
+        "numbers": [
+          11,
+          21,
+          38,
+          42,
+          12,
+          15,
+          25
+        ]
+      }
+    },
+    {
+      "year": 2016,
+      "issue": 112,
+      "date": "2016-09-29",
+      "numbers": [
+        14,
+        20,
+        28,
+        33,
+        41,
+        48,
+        40
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2016",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2016,
+        "issue": 112,
+        "date": "2016-09-30",
+        "numbers": [
+          48,
+          41,
+          20,
+          14,
+          33,
+          28,
+          40
+        ]
+      }
+    },
+    {
+      "year": 2016,
+      "issue": 118,
+      "date": "2016-10-13",
+      "numbers": [
+        2,
+        9,
+        16,
+        27,
+        32,
+        40,
+        46
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2016",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2016,
+        "issue": 118,
+        "date": "2016-10-14",
+        "numbers": [
+          16,
+          40,
+          27,
+          2,
+          9,
+          32,
+          46
+        ]
+      }
+    },
+    {
+      "year": 2016,
+      "issue": 120,
+      "date": "2016-10-18",
+      "numbers": [
+        8,
+        27,
+        28,
+        30,
+        38,
+        41,
+        12
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2016",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2016,
+        "issue": 120,
+        "date": "2016-10-19",
+        "numbers": [
+          28,
+          27,
+          30,
+          8,
+          41,
+          38,
+          12
+        ]
+      }
+    },
+    {
+      "year": 2016,
+      "issue": 121,
+      "date": "2016-10-20",
+      "numbers": [
+        2,
+        4,
+        7,
+        15,
+        28,
+        45,
+        19
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2016",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2016,
+        "issue": 121,
+        "date": "2016-10-21",
+        "numbers": [
+          7,
+          45,
+          28,
+          2,
+          15,
+          4,
+          19
+        ]
+      }
+    },
+    {
+      "year": 2016,
+      "issue": 126,
+      "date": "2016-11-01",
+      "numbers": [
+        1,
+        2,
+        21,
+        31,
+        33,
+        36,
+        8
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2016",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2016,
+        "issue": 126,
+        "date": "2016-11-02",
+        "numbers": [
+          2,
+          36,
+          33,
+          21,
+          1,
+          31,
+          8
+        ]
+      }
+    },
+    {
+      "year": 2017,
+      "issue": 36,
+      "date": "2017-03-28",
+      "numbers": [
+        2,
+        9,
+        21,
+        35,
+        36,
+        40,
+        44
+      ],
+      "source": "https://lottery.hk/en/mark-six/results/2017",
+      "reason": [
+        "draw_date"
+      ],
+      "local": {
+        "year": 2017,
+        "issue": 36,
+        "date": "2017-03-29",
+        "numbers": [
+          40,
+          2,
+          35,
+          9,
+          36,
+          21,
+          44
+        ]
+      }
+    }
+  ]
+}

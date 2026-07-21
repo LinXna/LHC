@@ -18,7 +18,7 @@
           6,
           9,
           6,
-          7
+          8
         ],
         "maxMissingValues": [
           -36,
@@ -26,7 +26,7 @@
           -44,
           -26,
           -31,
-          -38,
+          -39,
           -20,
           -33,
           -31,
@@ -36,6 +36,52 @@
         ]
       },
       "bodyList": [
+        {
+          "issue": 78,
+          "preDrawDate": "2026-07-21",
+          "preDrawCode": "6,47,45,1,41,37,8",
+          "color": [
+            2,
+            3,
+            1,
+            1,
+            3,
+            3,
+            1
+          ],
+          "czAndFe": [
+            2,
+            9,
+            11,
+            7,
+            3,
+            7,
+            12
+          ],
+          "czAndFeSeven": [
+            -3,
+            -16,
+            -2,
+            -4,
+            -1,
+            -39,
+            -8,
+            -13,
+            -9,
+            -11,
+            -22,
+            1
+          ],
+          "seventhSingleDouble": 1,
+          "seventhBigSmall": 1,
+          "totalBigSmall": 0,
+          "totalSingleDouble": 0,
+          "sumTotal": 185,
+          "nanairo": 0,
+          "seventhCompositeDouble": 1,
+          "seventhCompositeBig": 0,
+          "seventhMantissaBig": 0
+        },
         {
           "issue": 77,
           "preDrawDate": "2026-07-16",
